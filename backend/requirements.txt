@@ -1,6 +1,7 @@
 # FastAPI & Web
 fastapi==0.121.1
 uvicorn[standard]==0.38.0
+gunicorn==23.0.0
 python-multipart==0.0.20
 pydantic==2.12.4
 pydantic-settings==2.12.0

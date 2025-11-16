@@ -6,21 +6,23 @@
 FROM python:3.14-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
 # System dependencies with cache
+# This layer will be CACHED by Docker unless the package list changes
+# Cache mounts help with .deb file downloads, but Docker layer cache prevents re-running
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update -qq && \
+    apt-get install -y --no-install-recommends -qq \
         gcc \
         g++ \
         libpq-dev \
         curl && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
 
 # ===================================
 # STAGE 2: Dependencies
@@ -31,8 +33,12 @@ FROM base AS dependencies
 COPY requirements.txt .
 
 # Install Python packages with pip cache
+# Upgrade pip first (cached separately)
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    pip install --upgrade pip setuptools wheel && \
+    pip install --upgrade pip setuptools wheel
+
+# Install requirements (cached separately, only rebuilds if requirements.txt changes)
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     pip install -r requirements.txt
 
 # ===================================

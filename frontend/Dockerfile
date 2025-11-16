@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # BuildKit cache for npm (FAST!)
+# Cache npm packages and node_modules downloads
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     npm install
 
@@ -25,7 +26,7 @@ WORKDIR /app
 COPY package*.json ./
 
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
-    npm ci --only=production
+    npm ci
 
 COPY . .
 

@@ -1,0 +1,16 @@
+# Example override file for BuildKit configuration
+# Copy this to docker-compose.override.yml if you want to use it
+# Or set environment variables instead
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+  frontend:
+    build:
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+
