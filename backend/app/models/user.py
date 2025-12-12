@@ -1,83 +1,86 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, EmailStr, HttpUrl, UUID4, Field
-from .enums import PlanType
+from typing import Optional, List, Dict, TYPE_CHECKING
+from pydantic import EmailStr
+from sqlmodel import Field, Relationship, JSON
+from app.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.models.subscription import (
+        CustomPlan, Subscription, SubscriptionUsage, 
+        UpgradeRequest, BillingHistory, InAppNotification,SupportTicket
+    )
 
 # ============================================
-# PROFILES
+#  PROFILE (Public Schema)
 # ============================================
-class ProfileBase(BaseModel):
-    full_name: Optional[str] = None
-    avatar_url: Optional[HttpUrl] = None
+class Profile(BaseModel, table=True):
+    __tablename__ = "profiles"  # Standard Supabase naming convention
 
-class ProfileCreate(ProfileBase):
-    id: UUID4  # Must match auth.users.id
+    # This ID is NOT generated here. It matches auth.users.id
+    id: str = Field(primary_key=True, max_length=50)
+    
+    # We store a copy of email here for easy querying, but auth.users is the source of truth
+    email: EmailStr = Field(index=True, unique=True)
+    
+    full_name: Optional[str] = Field(default=None, max_length=255)
+    avatar_url: Optional[str] = Field(default=None, max_length=500)
+    
+    is_email_verified: bool = Field(default=False)
+    has_password: bool = Field(default=False)
+    
+    referral_code: Optional[str] = Field(default=None, index=True, max_length=20)
+    referred_by: Optional[str] = Field(default=None, max_length=50)
 
-class ProfileUpdate(ProfileBase):
-    pass
+    # Relationships
+    social_accounts: List["SocialAccount"] = Relationship(back_populates="user")
+    usage_stats: List["UsageStats"] = Relationship(back_populates="user")
+    
+    # Subscription Relationships
+    # Note: We keep the relationship attribute name as "custom_plans" etc.
+    custom_plans: List["CustomPlan"] = Relationship(back_populates="user")
+    subscriptions: List["Subscription"] = Relationship(back_populates="user")
+    subscription_usage: List["SubscriptionUsage"] = Relationship(back_populates="user")
+    upgrade_requests: List["UpgradeRequest"] = Relationship(back_populates="user")
+    billing_history: List["BillingHistory"] = Relationship(back_populates="user")
+    notifications: List["InAppNotification"] = Relationship(back_populates="user")
+    support_tickets: List["SupportTicket"] = Relationship(back_populates="user")
 
-class ProfileInDB(ProfileBase):
-    id: UUID4
-    current_plan: PlanType = PlanType.BASIC
-    plan_ends_at: Optional[datetime] = None
-    referral_code: Optional[str] = None
-    referred_by: Optional[UUID4] = None
-    created_at: datetime
-    updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-# ============================================
-# SOCIAL LOGINS
-# ============================================
-class SocialLoginBase(BaseModel):
-    provider: str  # google, github, etc.
-    provider_id: str
+class SocialAccount(BaseModel, table=True):
+    __tablename__ = "social_accounts"
+    
+    # Inherits id, created_at, updated_at from BaseModel
+    
+    # Foreign key points to profiles.id
+    user_id: str = Field(foreign_key="profiles.id", index=True, max_length=50)
+    
+    provider: str = Field(max_length=50)
+    provider_id: str = Field(max_length=255)
     email: EmailStr
-    name: Optional[str] = None
-    avatar_url: Optional[HttpUrl] = None
-
-class SocialLoginCreate(SocialLoginBase):
-    user_id: UUID4
-    access_token: str
-    refresh_token: Optional[str] = None
+    
+    name: Optional[str] = Field(default=None, max_length=255)
+    avatar_url: Optional[str] = Field(default=None, max_length=500)
+    
+    access_token: str = Field(sa_type=JSON) 
+    refresh_token: Optional[str] = Field(default=None)
     token_expires_at: Optional[datetime] = None
-    raw_data: Optional[dict] = None
+    raw_data: Optional[Dict] = Field(default=None, sa_type=JSON)
+    
+    # Relationship back to Profile
+    user: Optional["Profile"] = Relationship(back_populates="social_accounts")
 
-class SocialLoginInDB(SocialLoginBase):
-    id: UUID4
-    user_id: UUID4
-    access_token: str
-    refresh_token: Optional[str] = None
-    token_expires_at: Optional[datetime] = None
-    raw_data: Optional[dict] = None
-    created_at: datetime
 
-    class Config:
-        from_attributes = True
-
-# ============================================
-# USAGE STATS
-# ============================================
-class UsageStatsBase(BaseModel):
-    conversions_used: int = 0
-    chats_used: int = 0
-    api_requests: int = 0
-    app_bot_messages: int = 0
-
-class UsageStatsCreate(UsageStatsBase):
-    user_id: UUID4
-    date: datetime
-
-class UsageStatsUpdate(UsageStatsBase):
-    pass
-
-class UsageStatsInDB(UsageStatsBase):
-    id: UUID4
-    user_id: UUID4
-    date: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
+class UsageStats(BaseModel, table=True):
+    __tablename__ = "usage_stats"
+    
+    # Inherits id, created_at, updated_at from BaseModel
+    
+    user_id: str = Field(foreign_key="profiles.id", index=True, max_length=50)
+    stats_date: date_type = Field(index=True)
+    
+    conversions_used: int = Field(default=0)
+    chats_used: int = Field(default=0)
+    api_requests: int = Field(default=0)
+    app_bot_messages: int = Field(default=0)
+    
+    user: Optional["Profile"] = Relationship(back_populates="usage_stats")

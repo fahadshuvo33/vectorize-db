@@ -1,21 +1,45 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import Login from './components/Login'
+import Register from './components/Register'
+import { tokenManager } from './utils/auth'
 
 // Backend URLs - accessible from browser
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [showRegister, setShowRegister] = useState(false)
   const [backendStatus, setBackendStatus] = useState('Checking...')
   const [backendInfo, setBackendInfo] = useState(null)
   const [message, setMessage] = useState('')
   const [chatResponse, setChatResponse] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  // Check authentication status on mount
+  useEffect(() => {
+    if (tokenManager.isAuthenticated()) {
+      setIsAuthenticated(true)
+    }
+  }, [])
+
   // Check backend status on mount
   useEffect(() => {
     checkBackend()
   }, [])
+
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user)
+    setIsAuthenticated(true)
+  }
+
+  const handleLogout = () => {
+    tokenManager.removeToken()
+    setIsAuthenticated(false)
+    setCurrentUser(null)
+  }
 
   const checkBackend = async () => {
     try {
@@ -54,11 +78,58 @@ function App() {
     }
   }
 
+  // Show login/register if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <h1>🔥 VectorizeDB</h1>
+          <p className="subtitle">Turn databases into AI-ready formats</p>
+          <div className="version-badge">v1.0.0</div>
+        </header>
+
+        <main className="app-main">
+          {showRegister ? (
+            <Register
+              onSuccess={handleAuthSuccess}
+              onSwitchToLogin={() => setShowRegister(false)}
+            />
+          ) : (
+            <Login
+              onSuccess={handleAuthSuccess}
+              onSwitchToRegister={() => setShowRegister(true)}
+            />
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  // Show dashboard if authenticated
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🔥 DBMelt</h1>
-        <p className="subtitle">Turn databases into AI-ready formats</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+          <div>
+            <h1>🔥 VectorizeDB</h1>
+            <p className="subtitle">Turn databases into AI-ready formats</p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+            {currentUser && (
+              <div style={{ color: 'white', fontSize: '0.9rem' }}>
+                <div><strong>{currentUser.full_name || currentUser.email}</strong></div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>{currentUser.email}</div>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="btn btn-secondary"
+              style={{ marginTop: '0.5rem' }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
         <div className="version-badge">v1.0.0</div>
       </header>
 

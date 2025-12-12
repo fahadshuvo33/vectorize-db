@@ -17,6 +17,15 @@
   text-align: center;
   color: white;
   margin-bottom: 3rem;
+  position: relative;
+}
+
+.app-header > div {
+  text-align: left;
+}
+
+.app-header > div > div:first-child {
+  text-align: center;
 }
 
 .app-header h1 {
@@ -117,5 +126,155 @@
 .info-section li {
   padding: 0.5rem 0;
   color: #666;
+}
+
+/* Card styles */
+.card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.card-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.card-description {
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.status-content {
+  margin-top: 1rem;
+}
+
+.status-text.success {
+  background: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+}
+
+.status-text.error {
+  background: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
+}
+
+.backend-info {
+  margin-top: 1rem;
+}
+
+.backend-info p {
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.endpoints {
+  margin-top: 1rem;
+}
+
+.endpoints ul {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.5rem;
+}
+
+.endpoints li {
+  margin: 0.25rem 0;
+}
+
+.endpoints a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.endpoints a:hover {
+  text-decoration: underline;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.status-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.status-list li {
+  padding: 0.5rem 0;
+  color: #666;
+}
+
+.status-list li.completed {
+  color: #28a745;
+}
+
+.status-list li.pending {
+  color: #ffc107;
+}
+
+.ports-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.port-item {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  color: #333;
+}
+
+.port-note {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+.note {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 0.9rem;
+}
+
+.note code {
+  background: #fff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.version-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
 }
 

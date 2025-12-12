@@ -1,32 +1,15 @@
+# VectorizeDB Docker Compose with Supabase
+# 
+# This configuration uses Supabase as the backend service
+# Configure your Supabase credentials in .env file:
+#   SUPABASE_URL=https://your-project.supabase.co
+#   SUPABASE_KEY=your-anon-key
+#   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+#   SUPABASE_DATABASE_URL=postgresql://postgres:your-db-password@db.your-project.supabase.co:5432/postgres
+#
+# Get these from: https://supabase.com/dashboard > Your Project > Settings > API/Database
 
 services:
-  postgres:
-    image: postgres:18-alpine
-    container_name: dbmelt-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-dbmelt}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dbmelt_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-dbmelt_db}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    network_mode: host
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dbmelt -d dbmelt_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  redis:
-    image: redis:8-alpine
-    container_name: dbmelt-redis
-    restart: unless-stopped
-    network_mode: host
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   backend:
     build:
@@ -34,24 +17,31 @@ services:
       dockerfile: Dockerfile
       target: development
       cache_from:
-        - dbmelt-backend:latest
-    image: dbmelt-backend:latest
-    container_name: dbmelt-backend
+        - vectorizedb-backend:latest
+    image: vectorizedb-backend:latest
+    container_name: vectorizedb-backend
     restart: unless-stopped
     environment:
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - UPLOAD_DIR=/app/uploads
       - MAX_FILE_SIZE=100000000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-dbmelt}:${POSTGRES_PASSWORD:-dbmelt_secret}@localhost:5432/${POSTGRES_DB:-dbmelt_db}
-      - REDIS_URL=redis://localhost:6379
+      
+      # Supabase Configuration (Required)
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SUPABASE_DATABASE_URL=${SUPABASE_DATABASE_URL}
+      - DATABASE_URL=${SUPABASE_DATABASE_URL}  # Direct connection to Supabase PostgreSQL
+      
+      # Frontend URL for CORS and redirects
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
     volumes:
       # Mount source for hot reload
       - ./backend/app:/app/app
       - uploads:/app/uploads
     network_mode: host
-    depends_on:
-      - postgres
-      - redis
+    depends_on: []
 
   frontend:
     build:
@@ -59,9 +49,9 @@ services:
       dockerfile: Dockerfile
       target: development
       cache_from:
-        - dbmelt-frontend:latest
-    image: dbmelt-frontend:latest
-    container_name: dbmelt-frontend
+        - vectorizedb-frontend:latest
+    image: vectorizedb-frontend:latest
+    container_name: vectorizedb-frontend
     restart: unless-stopped
     environment:
       - VITE_API_URL=http://localhost:8000/api/v1
@@ -74,5 +64,4 @@ services:
       - backend
 
 volumes:
-  postgres_data:
   uploads:

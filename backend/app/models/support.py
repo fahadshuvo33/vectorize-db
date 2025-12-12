@@ -1,198 +1,76 @@
+from typing import Optional, List, Dict, TYPE_CHECKING
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, EmailStr, UUID4, Field
-from .enums import (
-    TicketStatus, TicketPriority, TicketCategory,
-    EmailStatus, NotificationType
-)
+from sqlmodel import Field, Relationship, Index, JSON
+from sqlalchemy import Column, Enum
 
-# ============================================
-# SUPPORT TICKETS
-# ============================================
-class SupportTicketBase(BaseModel):
-    subject: str = Field(min_length=5, max_length=200)
-    description: str = Field(min_length=10, max_length=5000)
-    priority: TicketPriority = TicketPriority.MEDIUM
-    category: TicketCategory
+from app.models.base import BaseModel
 
-class SupportTicketCreate(SupportTicketBase):
-    user_id: UUID4
+if TYPE_CHECKING:
+    from app.models.user import Profile
 
-class SupportTicketUpdate(BaseModel):
-    status: Optional[TicketStatus] = None
-    priority: Optional[TicketPriority] = None
-    assigned_to: Optional[UUID4] = None
 
-class SupportTicketInDB(SupportTicketBase):
-    id: UUID4
-    user_id: UUID4
-    status: TicketStatus = TicketStatus.OPEN
-    assigned_to: Optional[UUID4] = None
-    created_at: datetime
-    updated_at: datetime
-    resolved_at: Optional[datetime] = None
-    closed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+# -------------------------------------------
+# 1. SUPPORT TICKET (The Chat Thread)
+# -------------------------------------------
+class SupportTicket(BaseModel, table=True):
+    __tablename__ = "support_tickets"
+    __table_args__ = (
+        Index("idx_ticket_user", "user_id"),
+        Index("idx_ticket_status", "status"),
+    )
 
-# ============================================
-# SUPPORT TICKET MESSAGES
-# ============================================
-class SupportTicketMessageInDB(SupportTicketMessageBase):
-    id: UUID4
-    ticket_id: UUID4
-    user_id: UUID4
-    created_at: datetime
+    user_id: str = Field(foreign_key="profiles.id", max_length=50)
+    
+    subject: str = Field(max_length=255)
+    category: TicketCategory = Field(sa_column=Column(Enum(TicketCategory), default=TicketCategory.GENERAL))
+    status: TicketStatus = Field(sa_column=Column(Enum(TicketStatus), default=TicketStatus.OPEN))
+    priority: TicketPriority = Field(sa_column=Column(Enum(TicketPriority), default=TicketPriority.MEDIUM))
+    
+    # Optional: Assign to a specific admin
+    assigned_to: Optional[str] = Field(default=None, max_length=50) 
+    
+    last_activity_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    user: "Profile" = Relationship(back_populates="support_tickets")
+    messages: List["TicketMessage"] = Relationship(back_populates="ticket")
 
-    class Config:
-        from_attributes = True
 
-# ============================================
-# NOTIFICATIONS
-# ============================================
-class NotificationBase(BaseModel):
-    type: NotificationType
-    title: str = Field(min_length=1, max_length=200)
-    message: str = Field(min_length=1, max_length=1000)
-    action_url: Optional[str] = None
-    action_label: Optional[str] = None
+# -------------------------------------------
+# 2. TICKET MESSAGES (The Chat Bubbles)
+# -------------------------------------------
+class TicketMessage(BaseModel, table=True):
+    __tablename__ = "ticket_messages"
+    
+    ticket_id: str = Field(foreign_key="support_tickets.id", max_length=50)
+    sender_id: str = Field(max_length=50) # Can be Profile ID or Admin ID
+    sender_type: SenderType = Field(sa_column=Column(Enum(SenderType), nullable=False))
+    
+    message: str = Field(description="Content of the message")
+    
+    # Attachments (List of URLs)
+    attachments: Optional[List[str]] = Field(default=None, sa_type=JSON)
+    
+    is_internal: bool = Field(default=False, description="If true, only admins see this")
+    read_at: Optional[datetime] = None
 
-class NotificationCreate(NotificationBase):
-    user_id: UUID4
+    # Relationship
+    ticket: SupportTicket = Relationship(back_populates="messages")
 
-class NotificationUpdate(BaseModel):
-    read: bool
 
-class NotificationInDB(NotificationBase):
-    id: UUID4
-    user_id: UUID4
-    read: bool = False
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# ============================================
-# EMAIL TEMPLATES
-# ============================================
-class EmailTemplateBase(BaseModel):
-    name: str
-    slug: str = Field(pattern=r'^[a-z_]+$')
-    subject: str
-    body_html: str
-    body_text: str
-    variables: Optional[dict] = None
-    category: str
-    is_active: bool = True
-
-class EmailTemplateCreate(EmailTemplateBase):
-    pass
-
-class EmailTemplateUpdate(BaseModel):
-    subject: Optional[str] = None
-    body_html: Optional[str] = None
-    body_text: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class EmailTemplateInDB(EmailTemplateBase):
-    id: UUID4
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# ============================================
-# NOTIFICATION TEMPLATES
-# ============================================
-class NotificationTemplateBase(BaseModel):
-    name: str
-    slug: str = Field(pattern=r'^[a-z_]+$')
-    type: NotificationType
-    title_template: str
-    message_template: str
-    action_url_template: Optional[str] = None
-    action_label: Optional[str] = None
-    variables: Optional[dict] = None
-    is_active: bool = True
-
-class NotificationTemplateCreate(NotificationTemplateBase):
-    pass
-
-class NotificationTemplateUpdate(BaseModel):
-    title_template: Optional[str] = None
-    message_template: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class NotificationTemplateInDB(NotificationTemplateBase):
-    id: UUID4
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# ============================================
-# EMAIL LOGS
-# ============================================
-class EmailLogBase(BaseModel):
-    email_to: EmailStr
-    subject: str
-    status: EmailStatus = EmailStatus.PENDING
-
-class EmailLogCreate(EmailLogBase):
-    user_id: UUID4
-    template_id: Optional[UUID4] = None
-    provider_id: Optional[str] = None
-
-class EmailLogUpdate(BaseModel):
-    status: Optional[EmailStatus] = None
-    error_message: Optional[str] = None
-    sent_at: Optional[datetime] = None
-    opened_at: Optional[datetime] = None
-    clicked_at: Optional[datetime] = None
-
-class EmailLogInDB(EmailLogBase):
-    id: UUID4
-    user_id: UUID4
-    template_id: Optional[UUID4] = None
-    provider_id: Optional[str] = None
-    error_message: Optional[str] = None
-    sent_at: Optional[datetime] = None
-    opened_at: Optional[datetime] = None
-    clicked_at: Optional[datetime] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# ============================================
-# BLOG POSTS
-# ============================================
-class BlogPostBase(BaseModel):
-    slug: str = Field(pattern=r'^[a-z0-9-]+$')
-    title: str = Field(min_length=5, max_length=200)
-    content_html: str
-    excerpt: Optional[str] = Field(None, max_length=500)
-    published: bool = False
-
-class BlogPostCreate(BlogPostBase):
-    author_id: UUID4
-
-class BlogPostUpdate(BaseModel):
-    title: Optional[str] = None
-    content_html: Optional[str] = None
-    excerpt: Optional[str] = None
-    published: Optional[bool] = None
-    published_at: Optional[datetime] = None
-
-class BlogPostInDB(BlogPostBase):
-    id: UUID4
-    author_id: UUID4
-    published_at: Optional[datetime] = None
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
+# -------------------------------------------
+# 3. APP REVIEW (Public/Private Feedback)
+# -------------------------------------------
+class AppReview(BaseModel, table=True):
+    __tablename__ = "app_reviews"
+    
+    user_id: str = Field(foreign_key="profiles.id", max_length=50)
+    
+    rating: int = Field(description="1 to 5 stars")
+    comment: Optional[str] = Field(default=None, max_length=1000)
+    
+    # If users suggest a feature here, you can link it to a ticket later manually
+    is_public: bool = Field(default=True)
+    
+    user: "Profile" = Relationship()

@@ -1,98 +1,62 @@
-from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, UUID4, Field
-from app.models.enums import (
-    TicketStatus, TicketPriority, TicketCategory,
-    NotificationType
-)
+from datetime import datetime
+from sqlmodel import SQLModel
+from app.models.enums.support import TicketCategory, TicketStatus, TicketPriority, SenderType
 
-# ============================================
-# SUPPORT REQUESTS
-# ============================================
-class CreateTicketRequest(BaseModel):
-    subject: str = Field(min_length=5, max_length=200)
-    description: str = Field(min_length=10, max_length=5000)
+# ==========================================
+# MESSAGE SCHEMAS
+# ==========================================
+class TicketMessageBase(SQLModel):
+    message: str
+    attachments: Optional[List[str]] = None
+
+class TicketMessageCreate(TicketMessageBase):
+    # Sender info is handled by backend based on logged in user
+    pass
+
+class TicketMessageRead(TicketMessageBase):
+    id: str
+    sender_type: SenderType
+    created_at: datetime
+    # We might want to show sender name if it's an agent
+
+# ==========================================
+# TICKET SCHEMAS
+# ==========================================
+class SupportTicketBase(SQLModel):
+    subject: str
     category: TicketCategory
     priority: TicketPriority = TicketPriority.MEDIUM
 
-class ReplyTicketRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=5000)
+class SupportTicketCreate(SupportTicketBase):
+    # Initial message to start the thread
+    initial_message: str
 
-class UpdateTicketRequest(BaseModel):
+class SupportTicketUpdate(SQLModel):
     status: Optional[TicketStatus] = None
     priority: Optional[TicketPriority] = None
 
-# ============================================
-# SUPPORT RESPONSES
-# ============================================
-class TicketResponse(BaseModel):
-    id: UUID4
-    subject: str
+class SupportTicketRead(SupportTicketBase):
+    id: str
     status: TicketStatus
-    priority: TicketPriority
-    category: TicketCategory
-    message_count: int
     created_at: datetime
-    updated_at: datetime
-    resolved_at: Optional[datetime] = None
+    last_activity_at: datetime
 
-class TicketMessageResponse(BaseModel):
-    id: UUID4
-    message: str
-    is_staff_reply: bool
-    created_at: datetime
-    author_name: Optional[str] = None
-    attachments: Optional[dict] = None
+# ==========================================
+# CHAT VIEW (Ticket + Messages)
+# ==========================================
+class SupportTicketChatRead(SupportTicketRead):
+    # This includes the conversation history
+    messages: List[TicketMessageRead] = []
 
-class TicketDetailResponse(BaseModel):
-    ticket: TicketResponse
-    messages: List[TicketMessageResponse]
+# ==========================================
+# APP REVIEW SCHEMAS
+# ==========================================
+class AppReviewCreate(SQLModel):
+    rating: int
+    comment: Optional[str] = None
 
-class TicketListResponse(BaseModel):
-    tickets: List[TicketResponse]
-    total: int
-    open_count: int
-    resolved_count: int
-
-# ============================================
-# NOTIFICATION RESPONSES
-# ============================================
-class NotificationResponse(BaseModel):
-    id: UUID4
-    type: NotificationType
-    title: str
-    message: str
-    read: bool
-    action_url: Optional[str] = None
-    action_label: Optional[str] = None
-    created_at: datetime
-
-class NotificationCountResponse(BaseModel):
-    total: int
-    unread: int
-
-class MarkNotificationReadRequest(BaseModel):
-    notification_ids: List[str]  # UUIDs as strings
-
-# ============================================
-# EMAIL RESPONSES
-# ============================================
-class EmailTemplateResponse(BaseModel):
-    id: UUID4
-    name: str
-    slug: str
-    subject: str
-    category: str
-    variables: Optional[dict] = None
-    is_active: bool
-
-class EmailLogResponse(BaseModel):
-    id: UUID4
-    email_to: str
-    subject: str
-    status: str
-    sent_at: Optional[datetime] = None
-    opened_at: Optional[datetime] = None
-    clicked_at: Optional[datetime] = None
-    error_message: Optional[str] = None
+class AppReviewRead(AppReviewCreate):
+    id: str
+    user_id: str
     created_at: datetime

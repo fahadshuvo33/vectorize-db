@@ -1,114 +1,154 @@
-from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, UUID4, Field, validator
-from app.models.enums import (
-    PlanType, PaymentStatus, DiscountType, 
-    RewardType, RewardStatus
+from datetime import datetime, date
+from sqlmodel import SQLModel
+
+# Import Enums to ensure validation matches DB
+from app.models.enums.subscription import (
+    PlanStatus, SubscriptionType, BillingCycle, SubStatus, 
+    UpgradeType, Urgency, RequestStatus, OfferType, 
+    OfferStatus, TransactionType, TransactionStatus
 )
 
-# ============================================
-# SUBSCRIPTION REQUESTS
-# ============================================
-class UpgradePlanRequest(BaseModel):
-    plan_slug: PlanType
-    billing_cycle: str = Field(default="monthly", pattern="^(monthly|yearly)$")
-    discount_code: Optional[str] = None
-
-class CancelSubscriptionRequest(BaseModel):
-    reason: Optional[str] = Field(None, max_length=500)
-    feedback: Optional[str] = Field(None, max_length=1000)
-
-class ApplyDiscountRequest(BaseModel):
-    discount_code: str = Field(min_length=3, max_length=50)
-
-# ============================================
-# SUBSCRIPTION RESPONSES
-# ============================================
-class FeatureResponse(BaseModel):
-    key: str
+# ==========================================
+# 1. PLANS (Standard)
+# ==========================================
+class PlanBase(SQLModel):
     name: str
     description: Optional[str] = None
-    category: str
-    value: str  # Formatted (e.g., "Unlimited", "5,000 rows")
-    is_included: bool
+    monthly_price: float
+    annual_price: Optional[float] = None
+    file_limit: int
+    row_limit: int
+    daily_convert: int
+    api_access: bool = False
+    priority_support: bool = False
+    icon_color: Optional[str] = None
 
-class PlanResponse(BaseModel):
-    id: UUID4
-    slug: PlanType
-    name: str
-    description: Optional[str] = None
-    price_monthly: int  # cents
-    price_yearly: int
-    features: List[FeatureResponse]
-    is_current: bool = False
-    is_recommended: bool = False
-    savings_percent: Optional[int] = None  # For yearly
+class PlanCreate(PlanBase):
+    display_order: Optional[int] = None
+    is_active: bool = True
 
-class SubscriptionResponse(BaseModel):
-    plan: PlanType
-    status: PaymentStatus
-    current_period_end: datetime
-    cancel_at_period_end: bool
-    stripe_subscription_id: Optional[str] = None
+class PlanUpdate(SQLModel):
+    name: Optional[str] = None
+    monthly_price: Optional[float] = None
+    # ... add other fields as optional if needed
 
-class UpgradeQuoteResponse(BaseModel):
-    """Preview before upgrade"""
-    from_plan: PlanType
-    to_plan: PlanType
-    new_price_monthly: int
-    proration_credit: int
-    proration_charge: int
-    total_charge_today: int
-    new_billing_date: datetime
-
-class DiscountValidationResponse(BaseModel):
-    valid: bool
-    discount_code: Optional[str] = None
-    discount_type: Optional[str] = None
-    discount_value: Optional[int] = None
-    final_price: Optional[int] = None
-    savings: Optional[int] = None
-    error: Optional[str] = None
-
-class ReferralStatsResponse(BaseModel):
-    referral_code: str
-    referral_url: str
-    total_referrals: int
-    pending_rewards: int
-    total_rewards_earned: int
-    rewards: List["RewardResponse"]
-
-class RewardResponse(BaseModel):
-    id: UUID4
-    reward_type: RewardType
-    reward_value: int
-    status: RewardStatus
-    referred_user_email: Optional[str] = None
-    applied_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+class PlanRead(PlanBase):
+    id: str
+    is_active: bool
+    display_order: Optional[int]
     created_at: datetime
 
-# ============================================
-# ADMIN REQUESTS (Discount Codes)
-# ============================================
-class CreateDiscountCodeRequest(BaseModel):
-    code: str = Field(min_length=3, max_length=50, pattern="^[A-Z0-9_]+$")
-    type: DiscountType
-    value: int = Field(ge=0)
-    plan_slug: Optional[PlanType] = None
-    max_uses: int = -1
-    valid_from: datetime
-    valid_until: datetime
+# ==========================================
+# 2. CUSTOM PLANS
+# ==========================================
+class CustomPlanBase(SQLModel):
+    plan_name: str
+    description: Optional[str] = None
+    file_limit: int
+    row_limit: int
+    daily_convert: int
+    api_access: bool = False
+    priority_support: bool = False
+    
+class CustomPlanCreate(CustomPlanBase):
+    requested_price: float
 
-class DiscountCodeResponse(BaseModel):
-    id: UUID4
-    code: str
-    type: DiscountType
-    value: int
-    plan_slug: Optional[PlanType] = None
-    max_uses: int
-    used_count: int
-    valid_from: datetime
-    valid_until: datetime
-    is_active: bool
+class CustomPlanUpdateAdmin(SQLModel):
+    approved_price: Optional[float] = None
+    annual_price: Optional[float] = None
+    status: Optional[PlanStatus] = None
+    admin_notes: Optional[str] = None
+
+class CustomPlanRead(CustomPlanBase):
+    id: str
+    user_id: str
+    requested_price: float
+    approved_price: Optional[float]
+    status: PlanStatus
+    admin_notes: Optional[str] = None # Might want to hide this from user?
+    created_at: datetime
+
+# ==========================================
+# 3. SUBSCRIPTIONS
+# ==========================================
+class SubscriptionRead(SQLModel):
+    id: str
+    plan_id: Optional[str]
+    custom_plan_id: Optional[str]
+    subscription_type: SubscriptionType
+    status: SubStatus
+    billing_start_date: date
+    billing_end_date: date
+    billing_cycle: BillingCycle
+    auto_renew: bool
+    created_at: datetime
+
+    # We can include the Plan details nested if we want, 
+    # but usually frontend matches ID to Plan list
+
+# ==========================================
+# 4. SUBSCRIPTION USAGE
+# ==========================================
+class SubUsageRead(SQLModel):
+    files_used: int
+    rows_used: int
+    daily_converts_used: int
+    files_remaining: Optional[int]
+    rows_remaining: Optional[int]
+    usage_date: date
+
+# ==========================================
+# 5. UPGRADE REQUESTS & OFFERS
+# ==========================================
+
+# Request
+class UpgradeRequestCreate(SQLModel):
+    subscription_id: str
+    to_plan_id: Optional[str] = None
+    to_custom_plan_id: Optional[str] = None
+    upgrade_type: UpgradeType
+    reason: Optional[str] = None
+    urgency: Urgency = Urgency.FLEXIBLE
+
+class UpgradeRequestRead(SQLModel):
+    id: str
+    status: RequestStatus
+    created_at: datetime
+    user_responded_at: Optional[datetime]
+
+# Offer
+class UpgradeOfferCreate(SQLModel):
+    # Admin creates this
+    upgrade_request_id: str
+    offer_type: OfferType
+    new_plan_price: float
+    credit_applied: float
+    charge_amount: float
+    valid_until: Optional[datetime]
+
+class UpgradeOfferRead(SQLModel):
+    id: str
+    offer_type: OfferType
+    charge_amount: Optional[float]
+    credit_applied: Optional[float]
+    bonus_free_days: int
+    status: OfferStatus
+    valid_until: Optional[datetime]
+
+class UpgradeOfferResponse(SQLModel):
+    # User responds to offer
+    user_decision: str # "accept" or "reject"
+    user_notes: Optional[str] = None
+
+# ==========================================
+# 6. BILLING HISTORY
+# ==========================================
+class BillingHistoryRead(SQLModel):
+    id: str
+    amount: float
+    transaction_type: TransactionType
+    status: TransactionStatus
+    paid_at: Optional[datetime]
+    invoice_number: Optional[str]
     created_at: datetime

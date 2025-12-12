@@ -1,234 +1,102 @@
 """
-Schemas for DBMelt API
+Schemas for VectorizeDB API
 Organized by domain (mirrors models structure)
 """
 
-# Common
-from .common import (
-    SuccessResponse,
-    ErrorResponse,
-    MessageResponse,
-    PaginationParams,
-    PaginatedResponse,
-    HealthCheckResponse
-)
 
-# User
-from .user import (
-    # Requests
-    SignupRequest,
+from app.schemas.common import MessageResponse, PaginatedResponse
+from app.schemas.auth import (
+    RegisterRequest,
     LoginRequest,
+    ForgotPasswordRequest,
     ResetPasswordRequest,
+    SetPasswordRequest,
     ChangePasswordRequest,
-    UpdateProfileRequest,
-    # Responses
-    UserResponse,
+    RefreshTokenRequest,
+    ResendVerificationRequest,
+    TokensResponse,
     AuthResponse,
-    ProfileResponse,
-    UsageResponse,
-    UsageStatsResponse
+    OAuthURLResponse,
+)
+from app.schemas.user import (
+    UserResponse,
+    UserProfileResponse,
+    UpdateProfileRequest,
+    LinkedAccountsResponse,
+    SocialAccountResponse,
 )
 
-# File
-from .file import (
-    # Requests
-    FileUploadRequest,
-    MeltRequest,
-    DownloadFileRequest,
-    # Responses
-    FileUploadResponse,
-    MeltResponse,
-    MeltStatusResponse,
-    MeltResultResponse,
-    ConversionStepResponse,
-    FileResponse,
-    FileListResponse,
-    ConversionSummaryResponse
-)
 
-# Chat
-from .chat import (
-    # Requests
-    StartChatRequest,
-    SendMessageRequest,
-    UpdateChatTitleRequest,
-    # Responses
-    ChatSessionResponse,
-    ChatMessageResponse,
-    SendMessageResponse,
-    ChatHistoryResponse,
-    ChatListResponse
+# Notification
+from .notification import (
+    TemplateBase,
+    TemplateCreate,
+    TemplateUpdate,
+    TemplateRead,
+    InAppNotificationRead,
+    InAppNotificationUpdate,
+    EmailLogRead,
 )
 
 # Subscription
 from .subscription import (
-    # Requests
-    UpgradePlanRequest,
-    CancelSubscriptionRequest,
-    ApplyDiscountRequest,
-    CreateDiscountCodeRequest,
-    # Responses
-    FeatureResponse,
-    PlanResponse,
-    SubscriptionResponse,
-    UpgradeQuoteResponse,
-    DiscountValidationResponse,
-    DiscountCodeResponse,
-    ReferralStatsResponse,
-    RewardResponse
+    PlanBase,
+    PlanCreate,
+    PlanUpdate,
+    PlanRead,
+    CustomPlanBase,
+    CustomPlanCreate,
+    CustomPlanUpdateAdmin,
+    CustomPlanRead,
+    SubscriptionRead,
+    SubUsageRead,
+    UpgradeRequestCreate,
+    UpgradeRequestRead,
+    UpgradeOfferCreate,
+    UpgradeOfferRead,
+    UpgradeOfferResponse,
+    BillingHistoryRead,
 )
 
 # Support
 from .support import (
-    # Requests
-    CreateTicketRequest,
-    ReplyTicketRequest,
-    UpdateTicketRequest,
-    MarkNotificationReadRequest,
-    # Responses
-    TicketResponse,
-    TicketMessageResponse,
-    TicketDetailResponse,
-    TicketListResponse,
-    NotificationResponse,
-    NotificationCountResponse,
-    EmailTemplateResponse,
-    EmailLogResponse
+    TicketMessageBase,
+    TicketMessageCreate,
+    TicketMessageRead,
+    SupportTicketBase,
+    SupportTicketCreate,
+    SupportTicketUpdate,
+    SupportTicketRead,
+    SupportTicketChatRead,
+    AppReviewCreate,
+    AppReviewRead
 )
 
-# API
-from .api import (
-    # Requests
-    CreateAPIKeyRequest,
-    UpdateAPIKeyRequest,
-    CreateWebhookRequest,
-    UpdateWebhookRequest,
-    TestWebhookRequest,
-    # Responses
-    APIKeyCreateResponse,
-    APIKeyResponse,
-    APIUsageResponse,
-    WebhookResponse,
-    WebhookEventResponse,
-    WebhookTestResponse,
-    APIDBSupportResponse
-)
-
-# Dashboard
-from .dashboard import (
-    UpgradeBannerResponse,
-    DashboardStatsResponse,
-    DashboardResponse,
-    QuickStatsResponse
-)
-
-# Admin
-from .admin import (
-    # Requests
-    GrantFeatureRequest,
-    AdminUserSearchRequest,
-    AdminUpdateUserRequest,
-    # Responses
-    AdminStatsResponse,
-    RevenueStatsResponse,
-    UserDetailResponse,
-    UserStatsResponse,
-    ActivityLogResponse,
-    AdminUserListResponse
-)
+"""
+All Pydantic schemas (request/response models).
+"""
 
 __all__ = [
     # Common
-    "SuccessResponse",
-    "ErrorResponse",
     "MessageResponse",
-    "PaginationParams",
     "PaginatedResponse",
-    "HealthCheckResponse",
-    # User
-    "SignupRequest",
+    # Auth
+    "RegisterRequest",
     "LoginRequest",
+    "ForgotPasswordRequest",
     "ResetPasswordRequest",
+    "SetPasswordRequest",
     "ChangePasswordRequest",
-    "UpdateProfileRequest",
-    "UserResponse",
+    "RefreshTokenRequest",
+    "ResendVerificationRequest",
+    "TokensResponse",
     "AuthResponse",
-    "ProfileResponse",
-    "UsageResponse",
-    "UsageStatsResponse",
-    # File
-    "FileUploadRequest",
-    "MeltRequest",
-    "DownloadFileRequest",
-    "FileUploadResponse",
-    "MeltResponse",
-    "MeltStatusResponse",
-    "MeltResultResponse",
-    "ConversionStepResponse",
-    "FileResponse",
-    "FileListResponse",
-    "ConversionSummaryResponse",
-    # Chat
-    "StartChatRequest",
-    "SendMessageRequest",
-    "UpdateChatTitleRequest",
-    "ChatSessionResponse",
-    "ChatMessageResponse",
-    "SendMessageResponse",
-    "ChatHistoryResponse",
-    "ChatListResponse",
-    # Subscription
-    "UpgradePlanRequest",
-    "CancelSubscriptionRequest",
-    "ApplyDiscountRequest",
-    "CreateDiscountCodeRequest",
-    "FeatureResponse",
-    "PlanResponse",
-    "SubscriptionResponse",
-    "UpgradeQuoteResponse",
-    "DiscountValidationResponse",
-    "DiscountCodeResponse",
-    "ReferralStatsResponse",
-    "RewardResponse",
-    # Support
-    "CreateTicketRequest",
-    "ReplyTicketRequest",
-    "UpdateTicketRequest",
-    "MarkNotificationReadRequest",
-    "TicketResponse",
-    "TicketMessageResponse",
-    "TicketDetailResponse",
-    "TicketListResponse",
-    "NotificationResponse",
-    "NotificationCountResponse",
-    "EmailTemplateResponse",
-    "EmailLogResponse",
-    # API
-    "CreateAPIKeyRequest",
-    "UpdateAPIKeyRequest",
-    "CreateWebhookRequest",
-    "UpdateWebhookRequest",
-    "TestWebhookRequest",
-    "APIKeyCreateResponse",
-    "APIKeyResponse",
-    "APIUsageResponse",
-    "WebhookResponse",
-    "WebhookEventResponse",
-    "WebhookTestResponse",
-    "APIDBSupportResponse",
-    # Dashboard
-    "UpgradeBannerResponse",
-    "DashboardStatsResponse",
-    "DashboardResponse",
-    "QuickStatsResponse",
-    # Admin
-    "GrantFeatureRequest",
-    "AdminUserSearchRequest",
-    "AdminUpdateUserRequest",
-    "AdminStatsResponse",
-    "RevenueStatsResponse",
-    "UserDetailResponse",
-    "UserStatsResponse",
-    "ActivityLogResponse",
-    "AdminUserListResponse",
+    "OAuthURLResponse",
+    # User
+    "UserResponse",
+    "UserProfileResponse",
+    "UpdateProfileRequest",
+    "LinkedAccountsResponse",
+    "SocialAccountResponse",
 ]
+

@@ -1,4 +1,4 @@
-# DBMelt
+# VectorizeDB
 
 Turn databases into AI-ready formats with a live chatbot preview.
 
@@ -24,17 +24,17 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 
 Check your BuildKit setup:
 ```bash
-./check-buildkit.sh
+make check
 ```
 
 **Optional**: Pre-pull base images to ensure they're cached (recommended for first-time setup):
 ```bash
-./prepull-images.sh
+make prepull
 ```
 
 1. Start all services:
 ```bash
-docker-compose up --build
+make dev
 ```
 
 **Note**: 
@@ -46,7 +46,7 @@ docker-compose up --build
   - NPM packages are cached via BuildKit cache mounts
 - Only layers that change will be rebuilt (e.g., if you modify `requirements.txt` or `package.json`)
 
-**⚠️ Networking Issue**: If you see iptables errors, see `NETWORKING-FIX.md` for solutions. Port mappings are temporarily disabled but containers can still communicate internally.
+**⚠️ Networking Issue**: If you see iptables errors, run `make fix-net`.
 
 2. Access the application:
    - **Frontend:** http://localhost:5173 (Main UI)
@@ -55,7 +55,7 @@ docker-compose up --build
    - **ReDoc:** http://localhost:8000/redoc (Alternative docs)
    - **Health Check:** http://localhost:8000/health
 
-   See `ACCESS.md` for detailed access information and API endpoints.
+   See `docs/ACCESS.md` for detailed access information and API endpoints.
 
 ### Services
 
