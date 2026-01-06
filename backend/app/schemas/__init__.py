@@ -24,6 +24,8 @@ from app.schemas.user import (
     UpdateProfileRequest,
     LinkedAccountsResponse,
     SocialAccountResponse,
+    ChangeEmailRequest,
+    DeleteAccountRequest,
 )
 
 

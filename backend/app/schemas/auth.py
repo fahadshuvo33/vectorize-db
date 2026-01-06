@@ -37,12 +37,26 @@ def validate_password(password: str) -> str:
 #  Requests
 # ==================================================
 
+def clean_email_str(v: str) -> str:
+    """Strip whitespace and lowercase email."""
+    return v.strip().lower()
+
+# ==================================================
+#  Requests
+# ==================================================
+
 class RegisterRequest(BaseModel):
     """Email/password registration."""
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=100)
     full_name: Optional[str] = Field(None, max_length=255)
     referral_code: Optional[str] = Field(None, max_length=20)
+
+    # 1. ADD THIS TO FIX YOUR ERROR
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, v):
+        return clean_email_str(v)
 
     @field_validator("password")
     @classmethod
@@ -55,10 +69,22 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+    # 2. ADD THIS
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, v):
+        return clean_email_str(v)
+
 
 class ForgotPasswordRequest(BaseModel):
     """Request password reset."""
     email: EmailStr
+
+    # 3. ADD THIS
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, v):
+        return clean_email_str(v)
 
 
 class ResetPasswordRequest(BaseModel):
@@ -101,6 +127,13 @@ class RefreshTokenRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     """Resend verification email."""
     email: EmailStr
+    
+    # 4. ADD THIS
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, v):
+        return clean_email_str(v)
+
 
 
 # ==================================================

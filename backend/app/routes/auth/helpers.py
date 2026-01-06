@@ -9,7 +9,7 @@ from app.schemas import UserResponse, TokensResponse
 def profile_to_response(profile: Profile) -> UserResponse:
     """Convert Profile model to UserResponse schema."""
     return UserResponse(
-        id=profile.id,
+        id=str(profile.id),
         email=profile.email,
         full_name=profile.full_name,
         avatar_url=profile.avatar_url,

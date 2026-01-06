@@ -16,7 +16,7 @@ from app.schemas import (
 def profile_to_user_response(profile: Profile) -> UserResponse:
     """Convert Profile model to basic UserResponse."""
     return UserResponse(
-        id=profile.id,
+        id=str(profile.id),
         email=profile.email,
         full_name=profile.full_name,
         avatar_url=profile.avatar_url,
@@ -30,7 +30,7 @@ def profile_to_user_response(profile: Profile) -> UserResponse:
 def social_account_to_response(account: SocialAccount) -> SocialAccountResponse:
     """Convert SocialAccount model to SocialAccountResponse."""
     return SocialAccountResponse(
-        id=account.id,
+        id=str(account.id),
         provider=account.provider,
         email=account.email,
         name=account.name,
@@ -45,14 +45,14 @@ def profile_to_full_response(
 ) -> UserProfileResponse:
     """Convert Profile model to full UserProfileResponse with social accounts."""
     return UserProfileResponse(
-        id=profile.id,
+        id=str(profile.id),
         email=profile.email,
         full_name=profile.full_name,
         avatar_url=profile.avatar_url,
         is_email_verified=profile.is_email_verified,
         has_password=profile.has_password,
         referral_code=profile.referral_code,
-        referred_by=profile.referred_by,
+        referred_by=str(profile.referred_by) if profile.referred_by else None,
         created_at=profile.created_at,
         updated_at=profile.updated_at,
         social_accounts=[

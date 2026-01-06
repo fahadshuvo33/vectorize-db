@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import httpx
 from jose import jwt, JWTError
 from jose.backends.rsa_backend import RSAKey
+from app.utils import utc_now
 
 from app.core.config import settings
 
@@ -37,14 +38,14 @@ class JWKSCache:
     
     @property
     def is_valid(self) -> bool:
-        return self._cache is not None and self._expiry is not None and datetime.utcnow() < self._expiry
+        return self._cache is not None and self._expiry is not None and utc_now() < self._expiry
     
     def get(self) -> Optional[Dict[str, Any]]:
         return self._cache if self.is_valid else None
     
     def set(self, jwks: Dict[str, Any]) -> None:
         self._cache = jwks
-        self._expiry = datetime.utcnow() + self._duration
+        self._expiry = utc_now() + self._duration
     
     def get_stale(self) -> Optional[Dict[str, Any]]:
         """Return cached data even if expired (fallback)."""

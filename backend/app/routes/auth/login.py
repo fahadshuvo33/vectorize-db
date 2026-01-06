@@ -53,16 +53,18 @@ async def login(
 
         if not profile:
             # Edge case: Supabase user exists but no profile
+            email_confirmed_at = getattr(user, 'email_confirmed_at', None)
             profile = create_profile(
                 db=db,
                 user_id=user.id,
                 email=data.email,
-                is_email_verified=user.email_confirmed_at is not None,
+                is_email_verified=email_confirmed_at is not None,
                 has_password=True,
             )
         else:
             # Sync verification status from Supabase
-            is_verified = user.email_confirmed_at is not None
+            email_confirmed_at = getattr(user, 'email_confirmed_at', None)
+            is_verified = email_confirmed_at is not None
             if profile.is_email_verified != is_verified:
                 profile.is_email_verified = is_verified
                 db.add(profile)

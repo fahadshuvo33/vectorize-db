@@ -4,9 +4,12 @@ from sqlmodel import Field, Relationship, Index, JSON
 from sqlalchemy import Column, Enum
 
 from app.models.base import BaseModel
+from app.models.enums import TicketCategory, TicketPriority, TicketStatus, SenderType
+from app.utils import utc_now
 
 if TYPE_CHECKING:
     from app.models.user import Profile
+    from app.models.enums import TicketPriority
 
 
 
@@ -30,7 +33,7 @@ class SupportTicket(BaseModel, table=True):
     # Optional: Assign to a specific admin
     assigned_to: Optional[str] = Field(default=None, max_length=50) 
     
-    last_activity_at: datetime = Field(default_factory=datetime.utcnow)
+    last_activity_at: datetime = Field(default_factory=utc_now)
     
     # Relationships
     user: "Profile" = Relationship(back_populates="support_tickets")

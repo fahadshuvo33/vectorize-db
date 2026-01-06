@@ -1,7 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import SQLModel
-from app.models.enums.support import TicketCategory, TicketStatus, TicketPriority, SenderType
+from app.models.enums import TicketCategory, TicketStatus, TicketPriority, SenderType
 
 # ==========================================
 # MESSAGE SCHEMAS

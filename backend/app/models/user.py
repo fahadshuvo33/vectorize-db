@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Dict, TYPE_CHECKING
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, JSON
@@ -22,7 +22,7 @@ class Profile(BaseModel, table=True):
     # We store a copy of email here for easy querying, but auth.users is the source of truth
     email: EmailStr = Field(index=True, unique=True)
     
-    full_name: Optional[str] = Field(default=None, max_length=255)
+    full_name: str = Field(default=None, max_length=255)
     avatar_url: Optional[str] = Field(default=None, max_length=500)
     
     is_email_verified: bool = Field(default=False)
@@ -76,7 +76,7 @@ class UsageStats(BaseModel, table=True):
     # Inherits id, created_at, updated_at from BaseModel
     
     user_id: str = Field(foreign_key="profiles.id", index=True, max_length=50)
-    stats_date: date_type = Field(index=True)
+    stats_date: date = Field(default_factory=date.today, index=True)
     
     conversions_used: int = Field(default=0)
     chats_used: int = Field(default=0)

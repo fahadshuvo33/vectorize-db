@@ -82,7 +82,9 @@ def profile_to_dict(profile: Profile) -> Dict[str, Any]:
 
 def get_profile_by_id(db: Session, user_id: str) -> Optional[Profile]:
     """Fetch user profile from database."""
-    return db.exec(select(Profile).where(Profile.id == user_id)).first()
+    # return db.exec(select(Profile).where(Profile.id == user_id)).first()
+    profile = db.exec(select(Profile).where(Profile.id == user_id)).first()
+    return profile
 
 
 # ==================================================
@@ -134,10 +136,11 @@ async def get_current_user(
         # Fetch profile from database
         profile = get_profile_by_id(db, user_id)
         
+        email_confirmed_at = payload.get("email_confirmed_at")
         return {
             "id": user_id,
             "email": payload.get("email"),
-            "email_verified": payload.get("email_confirmed_at") is not None,
+            "email_verified": email_confirmed_at is not None,
             "role": payload.get("role", "authenticated"),
             "profile": profile_to_dict(profile) if profile else None,
             "token": token,
@@ -196,10 +199,11 @@ async def get_current_user_strict(
         # Fetch profile
         profile = get_profile_by_id(db, str(user.id))
         
+        email_confirmed_at = getattr(user, 'email_confirmed_at', None)
         return {
             "id": str(user.id),
             "email": user.email,
-            "email_verified": user.email_confirmed_at is not None,
+            "email_verified": email_confirmed_at is not None,
             "role": user.role or "authenticated",
             "profile": profile_to_dict(profile) if profile else None,
             "token": token,
@@ -259,10 +263,11 @@ async def get_optional_user(
         
         profile = get_profile_by_id(db, user_id)
         
+        email_confirmed_at = payload.get("email_confirmed_at")
         return {
             "id": user_id,
             "email": payload.get("email"),
-            "email_verified": payload.get("email_confirmed_at") is not None,
+            "email_verified": email_confirmed_at is not None,
             "role": payload.get("role", "authenticated"),
             "profile": profile_to_dict(profile) if profile else None,
             "token": credentials.credentials,

@@ -40,6 +40,18 @@ class SupabaseService:
                 settings.SUPABASE_URL,
                 settings.SUPABASE_SERVICE_ROLE_KEY
             )
+            
+
+        print(f"DEBUG - URL: {settings.SUPABASE_URL}")
+        print(f"DEBUG - ANON KEY START: {settings.SUPABASE_KEY[:10]}...")
+        if settings.SUPABASE_SERVICE_ROLE_KEY:
+            print(f"DEBUG - SERVICE KEY START: {settings.SUPABASE_SERVICE_ROLE_KEY[:10]}...")
+            
+            # Check if they are identical
+            if settings.SUPABASE_KEY == settings.SUPABASE_SERVICE_ROLE_KEY:
+                print("CRITICAL ERROR: SERVICE KEY IS SAME AS ANON KEY!!")
+        else:
+            print("DEBUG - NO SERVICE KEY FOUND")
 
 
     @property
@@ -147,10 +159,18 @@ class SupabaseService:
         """Get user by ID using admin privileges."""
         return self.admin.auth.admin.get_user_by_id(user_id)
 
-    def admin_delete_user(self, user_id: str) -> None:
-        """Delete user using admin privileges."""
-        self.admin.auth.admin.delete_user(user_id)
 
+    def admin_delete_user(self, user_id: str):
+        """Admin delete user from Supabase Auth"""
+        try:
+            # Using admin API
+            self.client.auth.admin.delete_user(user_id)
+        except Exception as e:
+            # Fallback to RPC if admin API not available
+            logger.warning(f"Admin delete failed, trying RPC: {e}")
+            self.client.rpc('delete_user', {'user_id': user_id}).execute()
+        
+        
     def admin_update_user(self, user_id: str, attributes: Dict[str, Any]) -> UserResponse:
         """Update user using admin privileges."""
         return self.admin.auth.admin.update_user_by_id(user_id, attributes)

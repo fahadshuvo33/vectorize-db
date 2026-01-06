@@ -5,7 +5,7 @@ from typing import Optional, List,TYPE_CHECKING
 # SQLModel imports
 from sqlmodel import Field, Relationship, UniqueConstraint, Index
 # SQLAlchemy specific imports for complex types
-from sqlalchemy import Column, Enum , Numeric
+from sqlalchemy import Column, Enum, Numeric, text
 from app.models.base import BaseModel 
 from decimal import Decimal
 # -------------------------------------------

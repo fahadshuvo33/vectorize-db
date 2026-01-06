@@ -88,7 +88,7 @@ CREATE INDEX idx_social_user ON social_accounts(user_id);
 CREATE TABLE usage_stats (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-    date DATE NOT NULL,
+    stats_date DATE NOT NULL,
     
     conversions_used INTEGER DEFAULT 0,
     chats_used INTEGER DEFAULT 0,
@@ -98,7 +98,7 @@ CREATE TABLE usage_stats (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-CREATE INDEX idx_usage_user_date ON usage_stats(user_id, date);
+CREATE INDEX idx_usage_user_date ON usage_stats(user_id, stats_date);
 
 
 -- ==========================================
@@ -224,7 +224,7 @@ CREATE TABLE plans (
     name VARCHAR(100) NOT NULL,
     description VARCHAR(500),
     
-    monthly_price DOUBLE PRECISION NOT NULL,
+    monthly_price NUMERIC(10, 2) NOT NULL,
     annual_price DOUBLE PRECISION,
     
     file_limit INTEGER NOT NULL,
@@ -280,7 +280,7 @@ CREATE TABLE subscriptions (
     
     subscription_type subscription_type NOT NULL,
     
-    monthly_price DOUBLE PRECISION NOT NULL,
+    monthly_price NUMERIC(10, 2) NOT NULL,
     annual_price DOUBLE PRECISION,
     
     billing_start_date DATE NOT NULL,
@@ -294,11 +294,10 @@ CREATE TABLE subscriptions (
     last_upgrade_at TIMESTAMP WITH TIME ZONE,
     
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    CONSTRAINT unique_user_active_subscription UNIQUE (user_id, status)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX idx_sub_user_status ON subscriptions(user_id, status);
+CREATE UNIQUE INDEX idx_unique_active_subscription ON subscriptions(user_id) WHERE status = 'active';
 
 -- 13. SUBSCRIPTION USAGE
 CREATE TABLE subscription_usage (
@@ -399,7 +398,7 @@ CREATE TABLE billing_history (
     upgrade_request_id UUID REFERENCES upgrade_requests(id),
     upgrade_offer_id UUID REFERENCES upgrade_offers(id),
     
-    amount DOUBLE PRECISION NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL,
     
     transaction_type transaction_type NOT NULL,
     
